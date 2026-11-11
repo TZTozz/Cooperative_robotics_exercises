@@ -23,7 +23,7 @@ function [Q, rho, W, p1, p2, new_min, new_max] = iCAT_task(A, J, Qold, rhoold, x
    n = size(J, 2);
    
    if (size(A, 2) ~= size(J, 1))
-       error('A and J have different size');
+       error('A and J have different size: %d %d', size(A, 2), size(J, 1));
    end
    
    %JQpinv1 = iCAT_pseudoInverse(J*Qold, A, Qold, lambda, threshold, weight);

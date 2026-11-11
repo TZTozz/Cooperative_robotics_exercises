@@ -25,7 +25,7 @@ robotModel = UvmsModel();
 sim = UvmsSim(dt, robotModel, endTime);
 
 % Initial position
-robotModel.eta = [10.5 35.5 -36 0 0 -pi]';
+robotModel.eta = [10.5 35.5 -36 1.5 0 -pi]';%[10.5 35.5 -36 -pi/3 pi/3 pi/2]';
 
 % Unity is used only as viewer/sensor endpoint; it is not the simulator.
 unity = UnityInterface("127.0.0.1");
@@ -34,15 +34,16 @@ unity = UnityInterface("127.0.0.1");
 % The first cell is the highest-priority task. Add safety tasks before the action objective when extending this exercise (for example, joint limits).
 task_tool = TaskTool();
 task_1 = TaskEx1();
-move_tool_tasks = {task_1};
+task_2 = TaskEx2();
+move_vehicle_tasks = {task_1 task_2};
 
 % Actions are registered and selected by name; the task order still defines strict priority within each action.
 actionManager = ActionManager(robotModel);
-actionManager.addAction("move_tool", move_tool_tasks);
-actionManager.setCurrentAction('move_tool');
+actionManager.addAction("move_vehicle", move_vehicle_tasks);
+actionManager.setCurrentAction('move_vehicle');
 
 % The logger monitors the tasks belonging to the action selected above.
-task_set = move_tool_tasks;
+task_set = move_vehicle_tasks;
 
 %% Set desired poses
 % Positions are in metres and orientations are [roll pitch yaw] in radians. Both poses are expressed in the inertial/world frame.
@@ -79,7 +80,8 @@ for step = 1:sim.maxSteps
     if mod(sim.loopCounter, round(1 / sim.dt)) == 0
         fprintf('t = %.2f s\n', sim.time);
         fprintf('alt = %.2f m\n', robotModel.altitude);
-        fprintf('dist = %.2f m\n', (robotModel.wTv(1:3,4)-robotModel.vehicleGoalPosition))
+        fprintf('dist = %.2f m\n', (robotModel.wTv(1:3,4)-robotModel.vehicleGoalPosition));
+        % fprintf('attitude = %.2f rad\n', robotModel.eta(4));
     end
 
     % Busy-wait until one sample period has elapsed when real-time playback is desired. 

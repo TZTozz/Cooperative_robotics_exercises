@@ -4,7 +4,7 @@ classdef TaskEx1 < Task
     % The task drives the tool frame vTt toward the goal frame vTg. Both frames are expressed relative to the vehicle, so the resulting error, reference velocity and Jacobian use a consistent vehicle-frame representation. All six components are permanently active.
 
     properties
-        feedbackGain = 0.2        % Proportional gain that converts Cartesian error into a velocity reference [1/s].
+        feedbackGain = 1        % Proportional gain that converts Cartesian error into a velocity reference [1/s].
         maxAngularVelocity = 0.2  % Maximum absolute component of the angular velocity reference [rad/s].
         maxLinearVelocity = 0.2   % Maximum absolute component of the linear velocity reference [m/s].
     end
@@ -19,7 +19,7 @@ classdef TaskEx1 < Task
             % Output:
             %   None. Updates obj.xdotbar as [angular; linear] velocity, expressed in the vehicle frame.
 
-            obj.xdotbar = - 1*(robot.vehicleGoalPosition - robot.wTv(1:3,4));
+            obj.xdotbar = - obj.feedbackGain * (robot.vehicleGoalPosition - robot.wTv(1:3,4));
             obj.xdotbar = robot.wTv(1:3,1:3)' * obj.xdotbar;
         end
 
