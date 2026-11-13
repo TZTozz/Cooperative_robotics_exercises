@@ -21,8 +21,14 @@ classdef TaskAltitude < Task
             % Output:
             %   None. Updates obj.xdotbar as [angular; linear] velocity, expressed in the vehicle frame.
 
-            obj.xdotbar = - obj.feedbackGain * ((obj.h_min + obj.delta) - robot.wTv(3,4));
-            % obj.xdotbar = robot.wTv(1:3,1:3)' * obj.xdotbar;
+            if isnan(robot.altitude) || robot.altitude < 0 
+               obj.xdotbar = 0;
+               return
+            end
+
+
+            raw_vel = obj.feedbackGain * ((obj.h_min + obj.delta) - robot.altitude);
+            obj.xdotbar = max(-obj.maxLinearVelocity, min(obj.maxLinearVelocity, raw_vel));
         end
 
         function updateJacobian(obj, robot)
@@ -47,8 +53,7 @@ classdef TaskAltitude < Task
             % % Concatenate according to ydot = [q_dot; v_nu].
             % obj.J = [Jt_a Jt_v];
             
-            J_k = robot.wTv(1:3,1:3) * [0; 0; 1];
-            obj.J = [zeros(1,7), J_k', zeros(1,3)];
+            obj.J = [zeros(1,7), robot.wTv(3,1:3), zeros(1,3)];
         end
 
         function updateActivation(obj, robot)
@@ -60,7 +65,7 @@ classdef TaskAltitude < Task
             % Output:
             %   None. Sets obj.A to the [6x6] identity matrix.
             %#ok<INUSD>
-            obj.A = DecreasingBellShapedFunction(obj.h_min, obj.h_min + obj.delta, 0, 1, robot.eta(3));
+            obj.A = DecreasingBellShapedFunction(obj.h_min, obj.h_min + obj.delta, 0, 1, robot.altitude);
         end
     end
 end

@@ -41,6 +41,7 @@ move_vehicle_tasks = {task_3 task_1 task_2};
 % Actions are registered and selected by name; the task order still defines strict priority within each action.
 actionManager = ActionManager(robotModel);
 actionManager.addAction("move_vehicle", move_vehicle_tasks);
+%actionManager.addAction("landing", landing_vehicle_task);
 actionManager.setCurrentAction('move_vehicle');
 
 % The logger monitors the tasks belonging to the action selected above.

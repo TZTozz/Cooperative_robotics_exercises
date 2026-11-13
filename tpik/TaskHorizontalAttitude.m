@@ -1,12 +1,16 @@
-classdef TaskEx1 < Task
+classdef TaskHorizontalAttitude < Task
     %TASKTOOL Six-dimensional Cartesian pose task for the UVMS tool.
     %
     % The task drives the tool frame vTt toward the goal frame vTg. Both frames are expressed relative to the vehicle, so the resulting error, reference velocity and Jacobian use a consistent vehicle-frame representation. All six components are permanently active.
 
     properties
-        feedbackGain = 1        % Proportional gain that converts Cartesian error into a velocity reference [1/s].
-        maxAngularVelocity = 0.2  % Maximum absolute component of the angular velocity reference [rad/s].
-        maxLinearVelocity = 0.2   % Maximum absolute component of the linear velocity reference [m/s].
+        feedbackGain = 300        % Proportional gain that converts Cartesian error into a velocity reference [1/s].
+        maxAngularVelocity = 50.0  % Maximum absolute component of the angular velocity reference [rad/s].
+        maxLinearVelocity = 5.0   % Maximum absolute component of the linear velocity reference [m/s].
+        theta
+        w_rho
+        theta_max = 0.15
+        delta = 0.1
     end
 
     methods
@@ -19,8 +23,11 @@ classdef TaskEx1 < Task
             % Output:
             %   None. Updates obj.xdotbar as [angular; linear] velocity, expressed in the vehicle frame.
 
-            obj.xdotbar = - obj.feedbackGain * (robot.vehicleGoalPosition - robot.wTv(1:3,4));
-            obj.xdotbar = robot.wTv(1:3,1:3)' * obj.xdotbar;
+            %obj.xdotbar = - 1*(robot.vehicleGoalPosition - robot.wTv(1:3,4));
+            obj.w_rho = ReducedVersorLemma([0 0 1]', robot.wTv(1:3,3));
+            obj.theta = norm(obj.w_rho);
+            obj.xdotbar = -obj.feedbackGain * obj.theta;
+            obj.xdotbar = max(-obj.maxAngularVelocity, min(obj.maxAngularVelocity, obj.xdotbar));
         end
 
         function updateJacobian(obj, robot)
@@ -44,7 +51,12 @@ classdef TaskEx1 < Task
             % 
             % % Concatenate according to ydot = [q_dot; v_nu].
             % obj.J = [Jt_a Jt_v];
-            obj.J = [zeros(3,7), -robot.wRgv, zeros(3,3)];
+            if (obj.theta ~= 0)
+                w_n = obj.w_rho / obj.theta;
+                obj.J = w_n'*[zeros(3,numel(robot.q)) zeros(3,3) robot.wTv(1:3,1:3)];
+            else
+                obj.J = zeros(1, numel(robot.q) + 6);
+            end
         end
 
         function updateActivation(obj, robot)
@@ -56,7 +68,8 @@ classdef TaskEx1 < Task
             % Output:
             %   None. Sets obj.A to the [6x6] identity matrix.
             %#ok<INUSD>
-            obj.A = eye(3);
+
+            obj.A = IncreasingBellShapedFunction(obj.theta_max - obj.delta, obj.theta_max, 0, 1, obj.theta);
         end
     end
 end
