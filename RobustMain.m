@@ -35,7 +35,8 @@ unity = UnityInterface("127.0.0.1");
 task_tool = TaskTool();
 task_1 = TaskEx1();
 task_2 = TaskEx2();
-move_vehicle_tasks = {task_1 task_2};
+task_3 = TaskAltitude();
+move_vehicle_tasks = {task_3 task_1 task_2};
 
 % Actions are registered and selected by name; the task order still defines strict priority within each action.
 actionManager = ActionManager(robotModel);
