@@ -65,6 +65,11 @@ classdef TaskAltitude < Task
             % Output:
             %   None. Sets obj.A to the [6x6] identity matrix.
             %#ok<INUSD>
+            if isnan(robot.altitude) || robot.altitude < 0
+                obj.A = 0;
+                return
+            end
+
             obj.A = DecreasingBellShapedFunction(obj.h_min, obj.h_min + obj.delta, 0, 1, robot.altitude);
         end
     end

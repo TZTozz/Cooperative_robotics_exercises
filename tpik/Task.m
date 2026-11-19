@@ -33,5 +33,12 @@ classdef Task < handle
 
         %UPDATEACTIVATION Update the task activation matrix A.
         updateActivation(obj, robot)
+
+    end
+
+    methods
+        function updateMultiActionMatrix(obj, Ap)
+            obj.A = Ap * obj.A;
+        end
     end
 end
