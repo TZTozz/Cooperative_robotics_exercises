@@ -6,7 +6,7 @@ classdef TaskPosition < Task
     properties
         feedbackGain = 1        % Proportional gain that converts Cartesian error into a velocity reference [1/s].
         maxAngularVelocity = 0.2  % Maximum absolute component of the angular velocity reference [rad/s].
-        maxLinearVelocity = 0.2   % Maximum absolute component of the linear velocity reference [m/s].
+        maxLinearVelocity = 1.2   % Maximum absolute component of the linear velocity reference [m/s].
     end
 
     methods

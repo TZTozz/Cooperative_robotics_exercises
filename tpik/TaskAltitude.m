@@ -4,11 +4,11 @@ classdef TaskAltitude < Task
     % The task drives the tool frame vTt toward the goal frame vTg. Both frames are expressed relative to the vehicle, so the resulting error, reference velocity and Jacobian use a consistent vehicle-frame representation. All six components are permanently active.
 
     properties
-        feedbackGain = 1        % Proportional gain that converts Cartesian error into a velocity reference [1/s].
+        feedbackGain = 5        % Proportional gain that converts Cartesian error into a velocity reference [1/s].
         maxAngularVelocity = 0.2  % Maximum absolute component of the angular velocity reference [rad/s].
-        maxLinearVelocity = 0.2   % Maximum absolute component of the linear velocity reference [m/s].
-        h_min = 1.0
-        delta = 0.5
+        maxLinearVelocity = 1.0   % Maximum absolute component of the linear velocity reference [m/s].
+        h_min = 1.1
+        delta = 0.2
     end
 
     methods

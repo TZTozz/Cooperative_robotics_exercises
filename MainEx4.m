@@ -25,7 +25,7 @@ robotModel = UvmsModel();
 sim = UvmsSim(dt, robotModel, endTime);
 
 % Initial position
-robotModel.eta = [48.5 11.5 -33 1.5 0 -pi]';%[10.5 35.5 -36 -pi/3 pi/3 pi/2]';[48.5 11.5 -33] 
+robotModel.eta = [48.5 11.5 -33 -pi/3 0 pi/2]';%[10.5 35.5 -36 -pi/3 pi/3 pi/2]';[48.5 11.5 -33] 
 
 % Unity is used only as viewer/sensor endpoint; it is not the simulator.
 unity = UnityInterface("127.0.0.1");
@@ -33,12 +33,15 @@ unity = UnityInterface("127.0.0.1");
 %% Define one action as a strict-priority stack of tasks
 % The first cell is the highest-priority task. Add safety tasks before the action objective when extending this exercise (for example, joint limits).
 task_tool = TaskTool();
-task_1 = TaskPosition();
-task_2 = TaskHorizontalAttitude();
-task_3 = TaskAltitude();
-move_vehicle_tasks = {task_3 task_1 task_2};
-landing_vehicle_task = {task_3};
-unified_task_vector = {task_3 task_1 task_2};
+task_position = TaskPosition();
+task_h_attitude = TaskHorizontalAttitude();
+task_min_altitude = TaskAltitude();
+task_landing = TaskLanding();
+
+move_vehicle_tasks = {task_min_altitude task_h_attitude task_position};
+landing_vehicle_task = {task_landing task_h_attitude task_position};
+
+unified_task_vector = {task_landing task_min_altitude task_h_attitude task_position};
 
 % Actions are registered and selected by name; the task order still defines strict priority within each action.
 actionManager = ActionManager(robotModel);
@@ -51,6 +54,8 @@ actionManager.setCurrentAction('safe_navigation');
 task_set = move_vehicle_tasks;
 
 actionManager.compileSmoothChange;
+changingAction = false;     % Inizialize flag
+Done = false;
 
 %% Set desired poses
 % Positions are in metres and orientations are [roll pitch yaw] in radians. Both poses are expressed in the inertial/world frame.
@@ -71,6 +76,21 @@ for step = 1:sim.maxSteps
     % Read the newest sensor sample. If none is available, the interface keeps the previous altitude value.
     robotModel.altitude = unity.receiveAltitude(robotModel);
 
+    % Start the smooth changing between actions
+    if ((norm(robotModel.wTv(1:3,4)-robotModel.vehicleGoalPosition) < 0.1) && ~Done && ~changingAction)
+        disp("Started the smooth changing");
+        changingAction = true;
+        startTime = sim.time;
+    end
+
+    if changingAction
+        Done = actionManager.SmoothActivation(sim.time - startTime, 'safe_navigation', 'landing');
+        if Done
+            changingAction = false;
+            disp("Smooth changing done");
+        end
+    end
+
     % Update every task and solve the current strict-priority hierarchy.
     [v_nu, q_dot] = actionManager.computeICAT(robotModel);
 
@@ -84,18 +104,17 @@ for step = 1:sim.maxSteps
     logger.update(sim.time, sim.loopCounter);
 
     % Print a compact status update approximately once per simulated second.
-    if mod(sim.loopCounter, round(1 / sim.dt)) == 0
+    if mod(sim.loopCounter, round(0.5 / sim.dt)) == 0
         fprintf('t = %.2f s\n', sim.time);
         fprintf('alt = %.2f m\n', robotModel.altitude);
         fprintf('dist = %.2f m\n', (robotModel.wTv(1:3,4)-robotModel.vehicleGoalPosition));
         % fprintf('attitude = %.2f rad\n', robotModel.eta(4));
+        fprintf('A: %.2f\n', task_landing.A);
     end
-
-    %if ((robotModel.wTv(1:3,4)-robotModel.vehicleGoalPosition) )
 
     % Busy-wait until one sample period has elapsed when real-time playback is desired. 
     % Remove this call to execute the simulation as fast as possible.
-    SlowdownToRealtime(dt);
+    %SlowdownToRealtime(dt);
 end
 
 %% Review results and release communication resources

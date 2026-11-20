@@ -19,7 +19,8 @@ classdef ActionManager < handle
         satMax           % [dof x 1] original upper system-velocity limits.
         ActivationTable dictionary = dictionary(string.empty, cell.empty)
         ActivationFunction
-        changingAction = false;
+        changingAction = false
+        deltaTime = 2    % time to pass from one action to another
     end
 
     properties (Constant, Access = private)
@@ -105,7 +106,7 @@ classdef ActionManager < handle
                     tasks{i}.updateReference(robot);
                     tasks{i}.updateJacobian(robot);
                     tasks{i}.updateActivation(robot);
-                    tasks{i}.updateMultiActionMatrix(obj.ActivationFunction(i))
+                    tasks{i}.A = tasks{i}.A * obj.ActivationFunction(i);
                 end
             else
                 tasks = obj.actions{obj.currentActionName};
@@ -208,7 +209,7 @@ classdef ActionManager < handle
             %     Done: boolean value that indicates that the changing phase ended
             %
 
-            if (time >= 3)      % in case the changing phase ended
+            if (time >= obj.deltaTime)      % in case the changing phase ended
                 obj.setCurrentAction(new);
                 obj.changingAction = false;
                 Done = true;
@@ -221,19 +222,20 @@ classdef ActionManager < handle
 
             vec = obj.ActivationTable{previous} - 2 * obj.ActivationTable{new};
 
-            for i = 1:lenght(vec)   % For each task in the unified list
+            for i = 1:length(vec)   % For each task in the unified list
                 switch vec(i)
                     case 0          % 00
                         obj.ActivationFunction(i) = 0;
                     case -2         % 01
-                        obj.ActivationFunction(i) = IncreasingBellShapedFunction(0, 3, 0, 1, time);
+                        obj.ActivationFunction(i) = IncreasingBellShapedFunction(0, obj.deltaTime, 0, 1, time);
                     case 1          % 10
-                        obj.ActivationFunction(i) = DecreasingBellShapedFunction(0, 3, 0, 1, time);
+                        obj.ActivationFunction(i) = DecreasingBellShapedFunction(0, obj.deltaTime, 0, 1, time);
                     case -1         % 11
                         obj.ActivationFunction(i) = 1;
                 end
             end
 
+            Done = false;
 
         end
     end

@@ -35,10 +35,4 @@ classdef Task < handle
         updateActivation(obj, robot)
 
     end
-
-    methods
-        function updateMultiActionMatrix(obj, Ap)
-            obj.A = Ap * obj.A;
-        end
-    end
 end
